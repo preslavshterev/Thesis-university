@@ -72,6 +72,13 @@ BULGARIAN_LAST_NAMES = [
     "Kirilov", "Kirilova", "Marinov", "Marinova", "Nikolov", "Nikolova",
 ]
 
+def random_bulgarian_phone():
+    """Returns a plausible Bulgarian mobile number, e.g. +359 88 123 4567."""
+    prefix = random.choice(["87", "88", "89", "98", "99"])
+    part1 = random.randint(100, 999)
+    part2 = random.randint(1000, 9999)
+    return f"+359 {prefix} {part1} {part2}"
+
 def random_bulgarian_name():
     """Returns (first_name, last_name) as a matching-gender pair."""
     if random.random() < 0.5:
@@ -173,7 +180,7 @@ with engine.begin() as conn:
             VALUES (:fn, :ln, :email, :phone, :city, :rd)
         """), {
             "fn": (cust_name := random_bulgarian_name())[0], "ln": cust_name[1],
-            "email": fake.unique.email(), "phone": fake.phone_number()[:20],
+            "email": fake.unique.email(), "phone": random_bulgarian_phone(),
             "city": random.choice(BULGARIAN_CITIES),
             "rd": fake.date_between(start_date="-3y", end_date="today"),
         })
