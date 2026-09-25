@@ -1,13 +1,3 @@
--- =====================================================================
--- Practice queries — diploma_project
--- Organized by day, matching the study plan.
--- Add new queries below as you progress; do not delete old ones.
--- =====================================================================
-
--- =====================================================================
--- DAY 5: SQL basics (SELECT, WHERE, ORDER BY, JOIN, LEFT JOIN, GROUP BY)
--- =====================================================================
-
 -- Customers from Sofia
 SELECT first_name, last_name
 FROM customers

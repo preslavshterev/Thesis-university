@@ -1,7 +1,4 @@
-"""
-Generate realistic test data for the diploma_project database.
-Safe to re-run: clears existing data first (in FK-safe order), then repopulates.
-"""
+
 
 import os
 import random

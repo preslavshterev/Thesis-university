@@ -1,19 +1,3 @@
-"""
-Day 11 -- Transformation: extracting year/month/week from dates,
-categorizing values, and computing new columns (feature engineering).
-
-Loads the core tables from the diploma_project MySQL database and
-returns enriched versions of them with derived columns that later
-steps (KPIs, RFM, forecasting) will rely on.
-
-Requires a running MySQL instance with the schema from schema.sql and
-data from generate_data.py, plus a .env file with:
-    DB_USER=...
-    DB_PASSWORD=...
-    DB_HOST=localhost
-    DB_NAME=diploma_project
-"""
-
 import os
 
 import pandas as pd

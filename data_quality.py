@@ -1,20 +1,3 @@
-"""
-Day 10 -- ETL: detecting missing values, duplicates and invalid records
-(data quality validation).
-
-Loads the core tables from the diploma_project MySQL database and runs
-a set of data-quality checks on them: missing values per column,
-duplicate rows, and business-rule violations (negative prices, orders
-with future dates, etc.).
-
-Requires a running MySQL instance with the schema from schema.sql and
-data from generate_data.py, plus a .env file with:
-    DB_USER=...
-    DB_PASSWORD=...
-    DB_HOST=localhost
-    DB_NAME=diploma_project
-"""
-
 import os
 
 import pandas as pd

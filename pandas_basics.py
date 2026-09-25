@@ -1,18 +1,3 @@
-"""
-Day 9 -- Pandas basics: filtering, sorting, merge/join, groupby.
-
-Loads the core tables from the diploma_project MySQL database into
-DataFrames and runs a set of basic transformations on them, mirroring
-the SQL exercises from Day 5-6 but done in Pandas instead.
-
-Requires a running MySQL instance with the schema from schema.sql and
-data from generate_data.py, plus a .env file with:
-    DB_USER=...
-    DB_PASSWORD=...
-    DB_HOST=localhost
-    DB_NAME=diploma_project
-"""
-
 import os
 
 import pandas as pd
