@@ -19,7 +19,46 @@ OUTPUT_DIR = "output"
 
 
 # =====================================================================
-# 1. Revenue trend over time (by month)
+# 1. Core KPIs
+# =====================================================================
+
+def calculate_total_revenue(df):
+    """Sum of line_total (quantity * unit_price) across all rows."""
+    return df["line_total"].sum()
+
+
+def calculate_total_profit(df):
+    """Sum of (unit_price - cost) * quantity across all rows."""
+    profit_per_line = (df["unit_price"] - df["cost"]) * df["quantity"]
+    return profit_per_line.sum()
+
+
+def calculate_order_count(df):
+    """Number of distinct orders (fact_sales has one row per sold item)."""
+    return df["order_id"].nunique()
+
+
+def calculate_aov(df):
+    """Average Order Value = total revenue / number of distinct orders."""
+    revenue = calculate_total_revenue(df)
+    orders = calculate_order_count(df)
+    return revenue / orders if orders > 0 else 0
+
+
+def generate_kpi_summary(fact_sales):
+    """Compute the core KPIs on completed orders only."""
+    completed = fact_sales[fact_sales["status"] == "completed"]
+
+    return {
+        "total_revenue": calculate_total_revenue(completed),
+        "total_profit": calculate_total_profit(completed),
+        "order_count": calculate_order_count(completed),
+        "average_order_value": calculate_aov(completed),
+    }
+
+
+# =====================================================================
+# 2. Revenue trend over time (by month)
 # =====================================================================
 
 def revenue_by_month(completed):
@@ -43,7 +82,7 @@ def plot_monthly_revenue(monthly, output_path):
 
 
 # =====================================================================
-# 2. Revenue by category
+# 3. Revenue by category
 # =====================================================================
 
 def revenue_by_category(completed):
@@ -66,7 +105,7 @@ def plot_revenue_by_category(by_category, output_path):
 
 
 # =====================================================================
-# 3. Revenue by store / region
+# 4. Revenue by store / region
 # =====================================================================
 
 def revenue_by_store(completed, stores):
@@ -98,9 +137,15 @@ if __name__ == "__main__":
 
     fact_sales = pd.read_parquet(FACT_SALES_PATH)
     completed = fact_sales[fact_sales["status"] == "completed"]
-    stores = pd.read_sql("SELECT * FROM stores", engine)
 
-    print("=== REVENUE BY MONTH ===")
+    print("=== CORE KPIs (completed orders only) ===")
+    summary = generate_kpi_summary(fact_sales)
+    print(f"Total revenue:        {summary['total_revenue']:.2f}")
+    print(f"Total profit:         {summary['total_profit']:.2f}")
+    print(f"Order count:          {summary['order_count']}")
+    print(f"Average order value:  {summary['average_order_value']:.2f}")
+
+    print("\n=== REVENUE BY MONTH ===")
     monthly = revenue_by_month(completed)
     print(monthly[["period", "line_total"]])
     plot_monthly_revenue(monthly, os.path.join(OUTPUT_DIR, "monthly_revenue.png"))
@@ -111,6 +156,7 @@ if __name__ == "__main__":
     plot_revenue_by_category(by_category, os.path.join(OUTPUT_DIR, "revenue_by_category.png"))
 
     print("\n=== REVENUE BY STORE ===")
+    stores = pd.read_sql("SELECT * FROM stores", engine)
     by_store = revenue_by_store(completed, stores)
     print(by_store)
     plot_revenue_by_store(by_store, os.path.join(OUTPUT_DIR, "revenue_by_store.png"))
