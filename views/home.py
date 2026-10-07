@@ -1,6 +1,8 @@
 import streamlit as st
 
 from data_access import load_fact_sales, load_rfm
+from formatting import format_money
+from sales import generate_kpi_summary
 
 st.title("Sales Analytics Dashboard")
 
@@ -14,11 +16,25 @@ except FileNotFoundError as error:
     )
     st.stop()
 
-st.subheader("Data connection check")
+kpis = generate_kpi_summary(fact_sales)
+profit_margin = kpis["total_profit"] / kpis["total_revenue"] * 100
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Sales lines", f"{len(fact_sales):,}")
-col2.metric("Customers with RFM data", f"{len(rfm):,}")
-col3.metric("Latest order date", fact_sales["order_date"].max().strftime("%Y-%m-%d"))
+st.subheader("Key performance indicators")
+st.caption("Completed orders only")
 
-st.dataframe(fact_sales.head(10))
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Total revenue", format_money(kpis['total_revenue']))
+col2.metric(
+    "Total profit",
+    format_money(kpis['total_profit']),
+    help=f"Profit margin: {profit_margin:.1f}% of revenue",
+)
+col3.metric("Orders", f"{kpis['order_count']:,}")
+col4.metric("Average order value", format_money(kpis['average_order_value']))
+
+with st.expander("Data overview"):
+    st.write(
+        f"{len(fact_sales):,} sales lines, {len(rfm):,} customers with RFM data, "
+        f"latest order {fact_sales['order_date'].max():%Y-%m-%d}."
+    )
+    st.dataframe(fact_sales.head(10))
