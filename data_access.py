@@ -16,3 +16,14 @@ def load_fact_sales():
 @st.cache_data
 def load_rfm():
     return pd.read_csv(OUTPUT_DIR / "rfm_table_with_clusters.csv")
+
+
+@st.cache_data
+def load_stores():
+    return pd.read_csv(OUTPUT_DIR / "stores.csv")
+
+
+@st.cache_data
+def load_completed_sales():
+    df = load_fact_sales()
+    return df[df["status"] == "completed"]
