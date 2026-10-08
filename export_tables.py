@@ -11,12 +11,14 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_NAME = os.getenv("DB_NAME", "diploma_project")
 
-OUTPUT_PATH = "output/stores.csv"
+OUTPUT_DIR = "output"
+TABLES = ["stores", "promotions", "inventory", "products"]
 
 if __name__ == "__main__":
     engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
-    stores = pd.read_sql("SELECT * FROM stores", engine)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    os.makedirs("output", exist_ok=True)
-    stores.to_csv(OUTPUT_PATH, index=False)
-    print(f"Saved {len(stores)} stores to {OUTPUT_PATH}")
+    for table in TABLES:
+        df = pd.read_sql(f"SELECT * FROM {table}", engine)
+        df.to_csv(f"{OUTPUT_DIR}/{table}.csv", index=False)
+        print(f"Saved {len(df)} rows to {OUTPUT_DIR}/{table}.csv")

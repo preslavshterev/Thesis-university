@@ -3,6 +3,8 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from products import flag_promotion_orders
+
 OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 
 
@@ -27,3 +29,13 @@ def load_stores():
 def load_completed_sales():
     df = load_fact_sales()
     return df[df["status"] == "completed"]
+
+
+@st.cache_data
+def load_promotions():
+    return pd.read_csv(OUTPUT_DIR / "promotions.csv", parse_dates=["start_date", "end_date"])
+
+
+@st.cache_data
+def load_flagged_sales():
+    return flag_promotion_orders(load_completed_sales(), load_promotions())

@@ -17,7 +17,7 @@ try:
 except FileNotFoundError as error:
     st.error(
         f"A required data file is missing ({error}). "
-        "Run etl_pipeline.py and export_stores.py first."
+        "Run etl_pipeline.py and export_tables.py first."
     )
     st.stop()
 
