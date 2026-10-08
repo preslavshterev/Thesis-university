@@ -1,7 +1,8 @@
 import plotly.express as px
 import streamlit as st
 
-from data_access import load_completed_sales, load_stores
+from data_access import load_stores
+from filters import get_filtered_sales
 from formatting import CURRENCY_SYMBOL
 from sales import revenue_by_category, revenue_by_month, revenue_by_store
 
@@ -12,13 +13,17 @@ MONEY_HOVER_H = f"{CURRENCY_SYMBOL}%{{x:,.2f}}"
 st.title("Sales")
 
 try:
-    completed = load_completed_sales()
+    completed = get_filtered_sales()
     stores = load_stores()
 except FileNotFoundError as error:
     st.error(
         f"A required data file is missing ({error}). "
         "Run etl_pipeline.py and export_tables.py first."
     )
+    st.stop()
+
+if completed.empty:
+    st.warning("No sales match the selected filters.")
     st.stop()
 
 monthly = revenue_by_month(completed)

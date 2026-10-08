@@ -1,6 +1,10 @@
 import streamlit as st
 
+from filters import render_sidebar_filters
+
 st.set_page_config(page_title="Sales Analytics", layout="wide")
+
+render_sidebar_filters()
 
 pages = [
     st.Page("views/home.py", title="Dashboard", default=True),

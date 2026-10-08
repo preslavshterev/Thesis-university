@@ -1,7 +1,8 @@
 import plotly.express as px
 import streamlit as st
 
-from data_access import load_completed_sales, load_flagged_sales
+from data_access import load_flagged_sales
+from filters import apply_filters, get_filtered_sales
 from formatting import CURRENCY_SYMBOL, format_money
 from products import (
     bottom_products_by_revenue,
@@ -16,13 +17,17 @@ BAR_COLOR = "#2E6F9E"
 st.title("Products")
 
 try:
-    completed = load_completed_sales()
-    flagged = load_flagged_sales()
+    completed = get_filtered_sales()
+    flagged = apply_filters(load_flagged_sales())
 except FileNotFoundError as error:
     st.error(
         f"A required data file is missing ({error}). "
         "Run etl_pipeline.py and export_tables.py first."
     )
+    st.stop()
+
+if completed.empty:
+    st.warning("No sales match the selected filters.")
     st.stop()
 
 
