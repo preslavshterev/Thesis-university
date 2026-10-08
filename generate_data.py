@@ -1,4 +1,7 @@
-
+"""
+Generate realistic test data for the diploma_project database.
+Safe to re-run: clears existing data first (in FK-safe order), then repopulates.
+"""
 
 import os
 import random
@@ -171,13 +174,14 @@ with engine.begin() as conn:
     # --- customers ---
     print(f"Generating {N_CUSTOMERS} customers...")
     customer_ids = []
-    for _ in range(N_CUSTOMERS):
+    for i in range(1, N_CUSTOMERS + 1):
         result = conn.execute(text("""
             INSERT INTO customers (first_name, last_name, email, phone, city, registration_date)
             VALUES (:fn, :ln, :email, :phone, :city, :rd)
         """), {
             "fn": (cust_name := random_bulgarian_name())[0], "ln": cust_name[1],
-            "email": fake.unique.email(), "phone": random_bulgarian_phone(),
+            "email": f"{cust_name[0].lower()}.{cust_name[1].lower()}{i}@example.com",
+            "phone": random_bulgarian_phone(),
             "city": random.choice(BULGARIAN_CITIES),
             "rd": fake.date_between(start_date="-3y", end_date="today"),
         })
