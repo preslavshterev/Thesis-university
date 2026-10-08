@@ -12,7 +12,7 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_NAME = os.getenv("DB_NAME", "diploma_project")
 
 OUTPUT_DIR = "output"
-TABLES = ["stores", "promotions", "inventory", "products"]
+TABLES = ["stores", "promotions", "inventory", "products", "categories"]
 
 if __name__ == "__main__":
     engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
