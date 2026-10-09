@@ -10,15 +10,15 @@ from forecasting import (
     select_best_order,
     split_train_test,
 )
-from formatting import CURRENCY_SYMBOL, format_money
+from formatting import format_money
+from ui import ACCENT, FORECAST_BAND, POSITIVE, PRIMARY, card, chart_card, metric_card, page_header, style_chart
 
-HISTORY_COLOR = "#2E6F9E"
-ACTUAL_COLOR = "#2E8B57"
-FORECAST_COLOR = "#E08A1E"
-BAND_COLOR = "rgba(224, 138, 30, 0.2)"
 HISTORY_DAYS = 60
 
-st.title("Forecast")
+page_header(
+    "Forecast",
+    "ARIMA forecast of daily revenue for the whole business (sidebar filters do not apply).",
+)
 
 try:
     daily = load_daily_revenue()
@@ -52,32 +52,24 @@ def forecast_figure(history, forecast, interval, actual=None):
     fig.add_trace(go.Scatter(
         x=list(forecast.index) + list(forecast.index[::-1]),
         y=list(upper) + list(lower.iloc[::-1]),
-        fill="toself",
-        fillcolor=BAND_COLOR,
-        line={"width": 0},
-        hoverinfo="skip",
-        name="95% confidence interval",
+        fill="toself", fillcolor=FORECAST_BAND, line={"width": 0},
+        hoverinfo="skip", name="95% confidence interval",
     ))
     fig.add_trace(go.Scatter(
         x=history.index, y=history.values, name="Historical revenue",
-        line={"color": HISTORY_COLOR},
+        line={"color": PRIMARY},
     ))
     if actual is not None:
         fig.add_trace(go.Scatter(
             x=actual.index, y=actual.values, name="Actual",
-            mode="lines+markers", line={"color": ACTUAL_COLOR},
+            mode="lines+markers", line={"color": POSITIVE},
         ))
     fig.add_trace(go.Scatter(
         x=forecast.index, y=forecast.values, name="Forecast",
-        line={"color": FORECAST_COLOR, "dash": "dash"},
+        line={"color": ACCENT, "dash": "dash"},
     ))
-    fig.update_layout(
-        yaxis_title="Revenue",
-        yaxis_tickprefix=CURRENCY_SYMBOL,
-        yaxis_tickformat=",",
-        hovermode="x unified",
-    )
-    return fig
+    fig.update_layout(yaxis_title="Revenue", hovermode="x unified")
+    return style_chart(fig, money_axis="y", height=380)
 
 
 (order, train, test, test_forecast, test_interval,
@@ -88,25 +80,35 @@ st.info(
     "so the best model forecasts roughly the average level with a wide interval."
 )
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Model", f"ARIMA{order}", help="Order chosen by the lowest AIC")
-col2.metric(f"Forecast, avg per day (next {FORECAST_HORIZON} days)", format_money(future_forecast.mean()))
-col3.metric(f"Actual, avg per day (last {TEST_SIZE} days)", format_money(test.mean()))
-
-st.subheader(f"Next {FORECAST_HORIZON} days")
-st.plotly_chart(forecast_figure(daily.iloc[-HISTORY_DAYS:], future_forecast, future_interval))
-
-st.subheader(f"Backtest: last {TEST_SIZE} days held out")
-st.plotly_chart(
-    forecast_figure(train.iloc[-HISTORY_DAYS:], test_forecast, test_interval, actual=test)
+columns = st.columns(3)
+metric_card(columns[0], "Model", f"ARIMA{order}", help="Order chosen by the lowest AIC")
+metric_card(
+    columns[1],
+    f"Forecast, avg per day (next {FORECAST_HORIZON} days)",
+    format_money(future_forecast.mean()),
+)
+metric_card(
+    columns[2],
+    f"Actual, avg per day (last {TEST_SIZE} days)",
+    format_money(test.mean()),
 )
 
-st.subheader("Model comparison on the held-out days")
-st.dataframe(
-    comparison,
-    hide_index=True,
-    column_config={
-        "MAE": st.column_config.NumberColumn(format="%.2f"),
-        "RMSE": st.column_config.NumberColumn(format="%.2f"),
-    },
+chart_card(
+    f"Next {FORECAST_HORIZON} days",
+    forecast_figure(daily.iloc[-HISTORY_DAYS:], future_forecast, future_interval),
 )
+chart_card(
+    f"Backtest: last {TEST_SIZE} days held out",
+    forecast_figure(train.iloc[-HISTORY_DAYS:], test_forecast, test_interval, actual=test),
+)
+
+with card("Model comparison"):
+    st.subheader("Model comparison on the held-out days")
+    st.dataframe(
+        comparison,
+        hide_index=True,
+        column_config={
+            "MAE": st.column_config.NumberColumn(format="%.2f"),
+            "RMSE": st.column_config.NumberColumn(format="%.2f"),
+        },
+    )

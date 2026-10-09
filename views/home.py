@@ -1,45 +1,50 @@
 import streamlit as st
 
-from data_access import load_rfm
 from filters import get_filtered_sales
 from formatting import format_money
-from sales import generate_kpi_summary
+from sales import generate_kpi_summary, revenue_by_category, revenue_by_month
+from ui import (
+    category_revenue_figure,
+    chart_card,
+    metric_card,
+    monthly_revenue_figure,
+    page_header,
+    stop_if_empty,
+)
 
-st.title("Sales Analytics Dashboard")
+page_header("Sales Analytics Dashboard", "Overview of completed orders for the selected filters.")
 
 try:
     filtered = get_filtered_sales()
-    rfm = load_rfm()
 except FileNotFoundError as error:
     st.error(
         f"A required data file is missing ({error}). "
-        "Run etl_pipeline.py, customers.py and export_tables.py first."
+        "Run etl_pipeline.py and export_tables.py first."
     )
     st.stop()
 
-if filtered.empty:
-    st.warning("No sales match the selected filters.")
-    st.stop()
+stop_if_empty(filtered)
 
 kpis = generate_kpi_summary(filtered)
 profit_margin = kpis["total_profit"] / kpis["total_revenue"] * 100
 
-st.subheader("Key performance indicators")
-st.caption("Completed orders, filtered by the sidebar selection")
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total revenue", format_money(kpis["total_revenue"]))
-col2.metric(
+columns = st.columns(4)
+metric_card(columns[0], "Total revenue", format_money(kpis["total_revenue"]))
+metric_card(
+    columns[1],
     "Total profit",
     format_money(kpis["total_profit"]),
     help=f"Profit margin: {profit_margin:.1f}% of revenue",
 )
-col3.metric("Orders", f"{kpis['order_count']:,}")
-col4.metric("Average order value", format_money(kpis["average_order_value"]))
+metric_card(columns[2], "Orders", f"{kpis['order_count']:,}")
+metric_card(columns[3], "Average order value", format_money(kpis["average_order_value"]))
 
-with st.expander("Data overview"):
-    st.write(
-        f"{len(filtered):,} sales lines match the filters. "
-        f"{len(rfm):,} customers with RFM data (not filtered)."
-    )
-    st.dataframe(filtered.head(10))
+left, right = st.columns([3, 2])
+with left:
+    chart_card("Monthly revenue", monthly_revenue_figure(revenue_by_month(filtered)))
+with right:
+    chart_card("Revenue by category", category_revenue_figure(revenue_by_category(filtered)))
+
+first = filtered["order_date"].min()
+last = filtered["order_date"].max()
+st.caption(f"Data shown: {first:%Y-%m-%d} to {last:%Y-%m-%d}, {len(filtered):,} sales lines.")

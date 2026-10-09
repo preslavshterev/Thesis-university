@@ -4,11 +4,14 @@ import streamlit as st
 from customers import describe_clusters
 from data_access import load_rfm
 from formatting import CURRENCY_SYMBOL
+from ui import CATEGORY_COLORS, PRIMARY, card, chart_card, page_header, style_chart
 
-BAR_COLOR = "#2E6F9E"
 MONEY_FORMAT = f"{CURRENCY_SYMBOL}%.2f"
 
-st.title("Customers")
+page_header(
+    "Customers",
+    "RFM segments and K-Means clusters, calculated on the whole sales history (sidebar filters do not apply).",
+)
 
 try:
     rfm = load_rfm()
@@ -19,21 +22,15 @@ except FileNotFoundError as error:
     )
     st.stop()
 
-st.subheader("RFM segments")
-
 segment_counts = (
     rfm["segment"].value_counts().rename_axis("segment").reset_index(name="customers")
 )
 fig_segments = px.bar(
-    segment_counts,
-    x="customers",
-    y="segment",
-    orientation="h",
+    segment_counts, x="customers", y="segment", orientation="h",
     labels={"customers": "Customers", "segment": "Segment"},
-    color_discrete_sequence=[BAR_COLOR],
+    color_discrete_sequence=[PRIMARY],
 )
 fig_segments.update_layout(yaxis={"categoryorder": "total ascending"})
-st.plotly_chart(fig_segments)
 
 segment_summary = (
     rfm.groupby("segment")
@@ -46,33 +43,41 @@ segment_summary = (
     .round(2)
     .sort_values("customers", ascending=False)
 )
-st.dataframe(
-    segment_summary,
-    column_config={
-        "avg_monetary": st.column_config.NumberColumn("Avg monetary", format=MONEY_FORMAT),
-    },
-)
 
-st.subheader("K-Means clusters")
+left, right = st.columns(2)
+with left:
+    chart_card("RFM segments", style_chart(fig_segments, height=340))
+with right:
+    with card("Segment profile"):
+        st.subheader("Segment profile")
+        st.dataframe(
+            segment_summary,
+            column_config={
+                "avg_monetary": st.column_config.NumberColumn("Avg monetary", format=MONEY_FORMAT),
+            },
+        )
 
 cluster_data = rfm.assign(cluster=rfm["cluster"].astype(str))
 fig_clusters = px.scatter(
-    cluster_data,
-    x="frequency",
-    y="monetary",
-    color="cluster",
+    cluster_data, x="frequency", y="monetary", color="cluster",
     category_orders={"cluster": sorted(cluster_data["cluster"].unique())},
+    color_discrete_sequence=CATEGORY_COLORS,
     hover_data=["customer_id", "recency_days"],
     labels={"frequency": "Orders", "monetary": "Total spent", "cluster": "Cluster"},
 )
-fig_clusters.update_layout(yaxis_tickprefix=CURRENCY_SYMBOL, yaxis_tickformat=",")
-st.plotly_chart(fig_clusters)
 
 cluster_profile = describe_clusters(rfm).round(2)
 cluster_profile.insert(0, "customers", rfm["cluster"].value_counts().sort_index())
-st.dataframe(
-    cluster_profile,
-    column_config={
-        "monetary": st.column_config.NumberColumn("Avg monetary", format=MONEY_FORMAT),
-    },
-)
+
+left, right = st.columns(2)
+with left:
+    chart_card("K-Means clusters", style_chart(fig_clusters, money_axis="y", height=340))
+with right:
+    with card("Cluster profile"):
+        st.subheader("Cluster profile")
+        st.dataframe(
+            cluster_profile,
+            column_config={
+                "monetary": st.column_config.NumberColumn("Avg monetary", format=MONEY_FORMAT),
+            },
+        )
