@@ -31,22 +31,29 @@ def render_sidebar_filters():
     st.sidebar.caption("Filters apply to Dashboard, Sales and Products.")
 
 
-def apply_filters(df):
-    stores = load_stores()
-
-    period = st.session_state["period"]
+def filter_sales(df, stores, period, store_names, categories):
     start = pd.Timestamp(period[0])
     end = pd.Timestamp(period[1] if len(period) == 2 else period[0])
 
-    store_ids = stores.loc[stores["store_name"].isin(st.session_state["stores"]), "store_id"]
+    store_ids = stores.loc[stores["store_name"].isin(store_names), "store_id"]
 
     mask = (
         (df["order_date"] >= start)
         & (df["order_date"] < end + pd.Timedelta(days=1))
         & df["store_id"].isin(store_ids)
-        & df["category_name"].isin(st.session_state["categories"])
+        & df["category_name"].isin(categories)
     )
     return df[mask]
+
+
+def apply_filters(df):
+    return filter_sales(
+        df,
+        load_stores(),
+        st.session_state["period"],
+        st.session_state["stores"],
+        st.session_state["categories"],
+    )
 
 
 def get_filtered_sales():
