@@ -49,6 +49,7 @@ def require_login():
     _, middle, _ = st.columns([1, 1, 1])
     with middle:
         st.title("Sales Analytics")
+        st.caption("Sign in to view the dashboard.")
 
         if not is_configured():
             st.error(
