@@ -51,3 +51,16 @@ def apply_filters(df):
 
 def get_filtered_sales():
     return apply_filters(load_completed_sales())
+
+
+def describe_filters():
+    period = st.session_state["period"]
+    period_text = f"{period[0]} to {period[1]}" if len(period) == 2 else str(period[0])
+    return pd.DataFrame({
+        "filter": ["Period", "Stores", "Categories"],
+        "value": [
+            period_text,
+            ", ".join(st.session_state["stores"]),
+            ", ".join(st.session_state["categories"]),
+        ],
+    })
