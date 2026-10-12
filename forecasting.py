@@ -1,11 +1,10 @@
-"""Time series preparation, baseline models, ARIMA/SARIMA and forecast evaluation."""
-
 import os
 import warnings
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 from statsmodels.tsa.seasonal import seasonal_decompose
@@ -46,7 +45,7 @@ def build_monthly_series(completed):
 
 
 def load_daily_series(path=DAILY_SERIES_PATH):
-    series = pd.read_csv(path, index_col=0, parse_dates=True)["revenue"]
+    series = pd.read_csv(path, index_col=0, parse_dates=True, float_precision="round_trip")["revenue"]
     series = series.asfreq("D")
     return series
 
@@ -59,6 +58,7 @@ def decompose_daily_series(daily_series, period=7):
 def plot_decomposition(decomposition, output_path):
     fig = decomposition.plot()
     fig.set_size_inches(12, 8)
+
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
@@ -88,9 +88,11 @@ def plot_baseline_forecasts(series, ma_forecast, es_forecast, output_path, last_
     plt.plot(recent_history.index, recent_history.values, label="Historical revenue")
     plt.plot(ma_forecast.index, ma_forecast.values, label="Moving average forecast", linestyle="--")
     plt.plot(es_forecast.index, es_forecast.values, label="Exponential smoothing forecast", linestyle="--")
+
     plt.title(f"Baseline forecasts -- last {last_n_days} days + {len(ma_forecast)}-day forecast")
     plt.ylabel("Revenue")
     plt.legend()
+
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
@@ -113,8 +115,10 @@ def plot_acf_pacf(series, output_path, lags=30):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     plot_acf(series.dropna(), lags=lags, ax=axes[0])
     plot_pacf(series.dropna(), lags=lags, ax=axes[1])
+
     axes[0].set_title("Autocorrelation (ACF)")
     axes[1].set_title("Partial autocorrelation (PACF)")
+
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
@@ -171,7 +175,11 @@ def select_best_seasonal_order(series, d, period=SEASONAL_PERIOD,
 
 def fit_arima(series, order, seasonal_order=(0, 0, 0, 0)):
     model = ARIMA(series, order=order, seasonal_order=seasonal_order)
-    fitted_model = model.fit()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ConvergenceWarning)
+        fitted_model = model.fit()
+
     return fitted_model
 
 
@@ -233,6 +241,7 @@ def compare_models_on_test(train, test, arima_order, seasonal_model=None):
         "Weekday profile (4 weeks)": profile_forecast,
         f"ARIMA{arima_order}": arima_forecast,
     }
+
     if seasonal_model is not None:
         order, seasonal_order = seasonal_model
         forecasts[f"SARIMA{order}x{seasonal_order}"] = fit_arima(
@@ -279,8 +288,10 @@ def plot_daily_errors(comparison, output_path):
     plt.figure(figsize=(12, 5))
     plt.bar(absolute_error.index.strftime("%Y-%m-%d"), absolute_error.values)
     plt.xticks(rotation=45, ha="right")
+
     plt.title("Absolute forecast error per day (test period)")
     plt.ylabel("Absolute error")
+
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
@@ -304,6 +315,7 @@ def plot_forecast_with_ci(train, test, predicted_mean, confidence_interval, outp
     plt.title("Revenue forecast vs actual, with 95% confidence interval")
     plt.ylabel("Revenue")
     plt.legend()
+
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
@@ -316,6 +328,7 @@ if __name__ == "__main__":
     completed = fact_sales[fact_sales["status"] == "completed"]
 
     print("=== STEP 1: BUILDING TIME SERIES ===")
+
     daily = build_daily_series(completed)
     weekly = build_weekly_series(completed)
     monthly = build_monthly_series(completed)
