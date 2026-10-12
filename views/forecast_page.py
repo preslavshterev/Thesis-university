@@ -4,10 +4,12 @@ import streamlit as st
 from data_access import load_daily_revenue
 from forecasting import (
     FORECAST_HORIZON,
+    ROLLING_WINDOWS,
     TEST_SIZE,
-    compare_models_on_test,
     fit_and_forecast_with_ci,
+    rolling_backtest,
     select_best_order,
+    select_best_seasonal_order,
     split_train_test,
 )
 from formatting import format_money
@@ -17,7 +19,7 @@ HISTORY_DAYS = 60
 
 page_header(
     "Forecast",
-    "ARIMA forecast of daily revenue for the whole business (sidebar filters do not apply).",
+    "Seasonal ARIMA forecast of daily revenue for the whole business (sidebar filters do not apply).",
 )
 
 try:
@@ -30,18 +32,21 @@ except FileNotFoundError as error:
     st.stop()
 
 
-@st.cache_data
+@st.cache_data(show_spinner="Fitting forecasting models...")
 def run_forecasts(series):
-    order, _ = select_best_order(series, d=0)
+    arima_order, _ = select_best_order(series, d=0)
+    (order, seasonal_order), _ = select_best_seasonal_order(series, d=0)
 
     train, test = split_train_test(series, test_size=TEST_SIZE)
-    _, test_forecast, test_interval = fit_and_forecast_with_ci(train, order, steps=len(test))
-    comparison = compare_models_on_test(train, test, order)
+    _, test_forecast, test_interval = fit_and_forecast_with_ci(
+        train, order, steps=len(test), seasonal_order=seasonal_order)
+    comparison = rolling_backtest(series, arima_order, (order, seasonal_order))
 
     _, future_forecast, future_interval = fit_and_forecast_with_ci(
-        series, order, steps=FORECAST_HORIZON
+        series, order, steps=FORECAST_HORIZON, seasonal_order=seasonal_order
     )
-    return order, train, test, test_forecast, test_interval, comparison, future_forecast, future_interval
+    label = f"SARIMA{order}x{seasonal_order}"
+    return label, train, test, test_forecast, test_interval, comparison, future_forecast, future_interval
 
 
 def forecast_figure(history, forecast, interval, actual=None):
@@ -72,16 +77,11 @@ def forecast_figure(history, forecast, interval, actual=None):
     return style_chart(fig, money_axis="y", height=380)
 
 
-(order, train, test, test_forecast, test_interval,
+(model_label, train, test, test_forecast, test_interval,
  comparison, future_forecast, future_interval) = run_forecasts(daily)
 
-st.info(
-    "Daily revenue in this dataset shows no clear trend or seasonality, "
-    "so the best model forecasts roughly the average level with a wide interval."
-)
-
 columns = st.columns(3)
-metric_card(columns[0], "Model", f"ARIMA{order}", help="Order chosen by the lowest AIC")
+metric_card(columns[0], "Model", model_label, help="Seasonal ARIMA with a weekly period, chosen by the lowest AIC")
 metric_card(
     columns[1],
     f"Forecast, avg per day (next {FORECAST_HORIZON} days)",
@@ -103,12 +103,13 @@ chart_card(
 )
 
 with card("Model comparison"):
-    st.subheader("Model comparison on the held-out days")
+    st.subheader(f"Model comparison: average over {ROLLING_WINDOWS} rolling {TEST_SIZE}-day windows")
     st.dataframe(
         comparison,
         hide_index=True,
         column_config={
             "MAE": st.column_config.NumberColumn(format="%.2f"),
             "RMSE": st.column_config.NumberColumn(format="%.2f"),
+            "windows_won": st.column_config.NumberColumn("Windows won", format="%d"),
         },
     )
