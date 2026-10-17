@@ -52,6 +52,8 @@ SELECT c.category_name, SUM(oi.quantity * oi.unit_price) AS total_revenue_from_c
 FROM categories c
 JOIN products p ON c.category_id = p.category_id
 JOIN order_items oi ON p.product_id = oi.product_id
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.status = 'completed'
 GROUP BY c.category_name
 ORDER BY total_revenue_from_category DESC;
 
