@@ -14,12 +14,9 @@ DB_NAME = os.getenv("DB_NAME", "diploma_project")
 engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
 
 
-# =====================================================================
-# 1. Date component extraction
-# =====================================================================
+
 
 def add_date_features(orders):
-    """Add year/month/week/day-of-week/quarter columns derived from order_date."""
     orders = orders.copy()
     orders["order_date"] = pd.to_datetime(orders["order_date"])
 
@@ -32,12 +29,7 @@ def add_date_features(orders):
     return orders
 
 
-# =====================================================================
-# 2. Categorization (binning)
-# =====================================================================
-
 def add_price_tier(products):
-    """Bucket products into price tiers based on their price."""
     products = products.copy()
 
     price_bins = [0, 50, 150, 300, float("inf")]
@@ -49,12 +41,7 @@ def add_price_tier(products):
     return products
 
 
-# =====================================================================
-# 3. Computed columns (feature engineering)
-# =====================================================================
-
 def add_product_profit_features(products):
-    """Add profit-per-unit and margin percentage columns."""
     products = products.copy()
 
     products["profit_per_unit"] = products["price"] - products["cost"]
@@ -64,14 +51,12 @@ def add_product_profit_features(products):
 
 
 def add_order_item_line_total(order_items):
-    """Add the total value (quantity * unit_price) of each order line."""
     order_items = order_items.copy()
     order_items["line_total"] = order_items["quantity"] * order_items["unit_price"]
     return order_items
 
 
 def add_customer_tenure_features(customers):
-    """Add customer tenure in days and a flag for recently registered customers."""
     customers = customers.copy()
     customers["registration_date"] = pd.to_datetime(customers["registration_date"])
 
@@ -83,12 +68,7 @@ def add_customer_tenure_features(customers):
     return customers
 
 
-# =====================================================================
-# 4. Put it all together
-# =====================================================================
-
 def enrich_all(customers, products, orders, order_items):
-    """Return enriched (feature-engineered) versions of the core tables."""
     customers_enriched = add_customer_tenure_features(customers)
     products_enriched = add_product_profit_features(add_price_tier(products))
     orders_enriched = add_date_features(orders)
