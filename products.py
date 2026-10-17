@@ -18,9 +18,6 @@ FACT_SALES_PATH = "output/fact_sales.parquet"
 OUTPUT_DIR = "output"
 
 
-# =====================================================================
-# 1. Best / worst selling products
-# =====================================================================
 
 def top_products_by_revenue(completed, n=10):
     return (
@@ -52,14 +49,7 @@ def top_products_by_quantity(completed, n=10):
     )
 
 
-# =====================================================================
-# 2. Seasonal trends by category
-# =====================================================================
-
 def seasonal_trends_by_category(completed):
-    """Pivot table: total revenue per category, per quarter. Useful to
-    spot categories that sell disproportionately well in a given
-    season (e.g. higher electronics sales in Q4)."""
     pivot = completed.pivot_table(
         index="category_name",
         columns="order_quarter",
@@ -82,13 +72,7 @@ def plot_seasonal_trends(pivot, output_path):
     plt.close()
 
 
-# =====================================================================
-# 3. Effect of promotions
-# =====================================================================
-
 def load_promotions():
-    """Promotions are not part of fact_sales, so they are loaded
-    directly from MySQL."""
     promotions = pd.read_sql("SELECT * FROM promotions", engine)
     promotions["start_date"] = pd.to_datetime(promotions["start_date"])
     promotions["end_date"] = pd.to_datetime(promotions["end_date"])
@@ -96,10 +80,6 @@ def load_promotions():
 
 
 def flag_promotion_orders(completed, promotions):
-    """Mark each sale as having happened during an active promotion for
-    that product, by joining on product_id and then checking whether
-    the order date falls inside the promotion's [start_date, end_date]
-    range (a date-range join, not a simple key match)."""
     completed = completed.copy()
     completed["order_date"] = pd.to_datetime(completed["order_date"])
 
@@ -110,9 +90,6 @@ def flag_promotion_orders(completed, promotions):
         & (merged["order_date"] <= merged["end_date"])
     )
 
-    # A product can have more than one promotion in the data, which
-    # would duplicate rows via the merge above. Collapse back down to
-    # one row per original sale with a single True/False flag.
     merged["on_promotion"] = in_promotion.fillna(False)
     flag_per_item = merged.groupby("order_item_id")["on_promotion"].any()
 
@@ -121,8 +98,6 @@ def flag_promotion_orders(completed, promotions):
 
 
 def compare_promotion_effect(flagged):
-    """For products that were ever promoted, compare average quantity
-    and revenue per sale during the promotion vs outside of it."""
     promoted_product_ids = flagged.loc[flagged["on_promotion"], "product_id"].unique()
     promoted_only = flagged[flagged["product_id"].isin(promoted_product_ids)]
 
