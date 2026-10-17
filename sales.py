@@ -18,35 +18,27 @@ FACT_SALES_PATH = "output/fact_sales.parquet"
 OUTPUT_DIR = "output"
 
 
-# =====================================================================
-# 1. Core KPIs
-# =====================================================================
 
 def calculate_total_revenue(df):
-    """Sum of line_total (quantity * unit_price) across all rows."""
     return df["line_total"].sum()
 
 
 def calculate_total_profit(df):
-    """Sum of (unit_price - cost) * quantity across all rows."""
     profit_per_line = (df["unit_price"] - df["cost"]) * df["quantity"]
     return profit_per_line.sum()
 
 
 def calculate_order_count(df):
-    """Number of distinct orders (fact_sales has one row per sold item)."""
     return df["order_id"].nunique()
 
 
 def calculate_aov(df):
-    """Average Order Value = total revenue / number of distinct orders."""
     revenue = calculate_total_revenue(df)
     orders = calculate_order_count(df)
     return revenue / orders if orders > 0 else 0
 
 
 def generate_kpi_summary(fact_sales):
-    """Compute the core KPIs on completed orders only."""
     completed = fact_sales[fact_sales["status"] == "completed"]
 
     return {
@@ -56,10 +48,6 @@ def generate_kpi_summary(fact_sales):
         "average_order_value": calculate_aov(completed),
     }
 
-
-# =====================================================================
-# 2. Revenue trend over time (by month)
-# =====================================================================
 
 def revenue_by_month(completed):
     monthly = completed.groupby(["order_year", "order_month"])["line_total"].sum().reset_index()
@@ -81,10 +69,6 @@ def plot_monthly_revenue(monthly, output_path):
     plt.close()
 
 
-# =====================================================================
-# 3. Revenue by category
-# =====================================================================
-
 def revenue_by_category(completed):
     return (
         completed.groupby("category_name")["line_total"]
@@ -104,14 +88,8 @@ def plot_revenue_by_category(by_category, output_path):
     plt.close()
 
 
-# =====================================================================
-# 4. Revenue by store / region
-# =====================================================================
 
 def revenue_by_store(completed, stores):
-    # completed already has a "city" column (the customer's city, from the
-    # customers merge in etl_pipeline.py). Rename the stores' city column
-    # before merging so it does not collide and get suffixed to city_x/city_y.
     stores = stores.rename(columns={"city": "store_city"})
     merged = completed.merge(stores, on="store_id", how="left")
     return (
