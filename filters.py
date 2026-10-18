@@ -28,7 +28,7 @@ def render_sidebar_filters():
     st.sidebar.multiselect("Stores", options=store_names, default=store_names, key="stores")
     st.sidebar.multiselect("Categories", options=categories, default=categories, key="categories")
     st.sidebar.button("Reset filters", on_click=reset_filters)
-    st.sidebar.caption("Filters apply to Dashboard, Sales and Products.")
+    st.sidebar.caption("Filters apply to Dashboard, Sales, Products and Reports.")
 
 
 def filter_sales(df, stores, period, store_names, categories):
