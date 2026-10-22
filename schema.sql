@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS diploma_project CHARACTER SET utf8mb4;
+USE diploma_project;
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `categories`;
