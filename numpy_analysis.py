@@ -16,12 +16,7 @@ DB_NAME = os.getenv("DB_NAME", "diploma_project")
 engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
 
 
-# =====================================================================
-# 1. Loop vs. vectorized operation (performance comparison)
-# =====================================================================
-
 def compare_loop_vs_vectorized(order_items):
-    """Compute line totals two ways and compare execution time."""
     prices = order_items["unit_price"].to_numpy()
     quantities = order_items["quantity"].to_numpy()
 
@@ -39,12 +34,8 @@ def compare_loop_vs_vectorized(order_items):
     return totals_vectorized
 
 
-# =====================================================================
-# 2. Aggregations on a NumPy array
-# =====================================================================
 
 def summarize_revenue(revenue):
-    """Print basic descriptive statistics for an array of revenue values."""
     print("Mean order line value:", np.mean(revenue))
     print("Median order line value:", np.median(revenue))
     print("Std deviation:", np.std(revenue))
@@ -52,24 +43,16 @@ def summarize_revenue(revenue):
     print("25th/75th percentile:", np.percentile(revenue, [25, 75]))
 
 
-# =====================================================================
-# 3. np.where -- vectorized if/else
-# =====================================================================
 
 def add_is_expensive_flag(products):
-    """Flag products as expensive or affordable based on price, vectorized."""
     products = products.copy()
     prices = products["price"].to_numpy()
     products["is_expensive"] = np.where(prices > 150, "expensive", "affordable")
     return products
 
 
-# =====================================================================
-# 4. np.select -- vectorized multi-branch condition
-# =====================================================================
 
 def add_margin_category(products):
-    """Categorize products into margin buckets using multiple conditions at once."""
     products = products.copy()
     products["profit_per_unit"] = products["price"] - products["cost"]
     products["margin_pct"] = (products["profit_per_unit"] / products["price"]) * 100
@@ -85,12 +68,8 @@ def add_margin_category(products):
     return products
 
 
-# =====================================================================
-# 5. Broadcasting -- array-scalar and array-array operations
-# =====================================================================
 
 def add_discounted_price(products):
-    """Apply a variable discount rate (higher for pricier products) via broadcasting."""
     products = products.copy()
     prices = products["price"].to_numpy()
 

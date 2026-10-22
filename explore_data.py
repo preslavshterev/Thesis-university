@@ -12,7 +12,6 @@ DB_NAME = os.getenv("DB_NAME", "diploma_project")
 
 engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
 
-# зареждане на цяла таблица в DataFrame
 orders_df = pd.read_sql("SELECT * FROM orders", engine)
 
 print(orders_df.head())
