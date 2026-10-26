@@ -6,24 +6,24 @@ from data_quality import check_duplicates, check_invalid_records
 def test_data_quality_catches_issues():
     customers = pd.DataFrame({
         "customer_id": [1, 2, 3],
-        "email": ["a@test.com", "a@test.com", "b@test.com"],  # intentional duplicate
+        "email": ["a@test.com", "a@test.com", "b@test.com"],  
     })
 
     products = pd.DataFrame({
         "product_id": [1, 2],
-        "price": [-10.0, 50.0],   # intentional negative price
+        "price": [-10.0, 50.0],   
         "cost": [5.0, 20.0],
     })
 
     orders = pd.DataFrame({
         "order_id": [1],
-        "order_date": [pd.Timestamp.now() + pd.Timedelta(days=30)],  # intentional future date
+        "order_date": [pd.Timestamp.now() + pd.Timedelta(days=30)],  
         "status": ["completed"],
     })
 
     order_items = pd.DataFrame({
         "order_item_id": [1],
-        "quantity": [-2],          # intentional invalid quantity
+        "quantity": [-2],          
         "unit_price": [10.0],
     })
 
